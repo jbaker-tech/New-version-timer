@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sequential Timer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: white;
+            font-size: 2.5rem;
+        }
+
+        .settings-btn {
+            background: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .settings-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .total-time {
+            text-align: center;
+            color: white;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .settings-panel {
+            display: none;
+        }
+
+        .settings-panel.active {
+            display: block;
+        }
+
+        .setting-item {
+            margin-bottom: 20px;
+        }
+
+        .setting-item label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .current-timer {
+            text-align: center;
+        }
+
+        .current-timer h2 {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .current-timer .timer-info {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        .time-display {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .time-display.warning {
+            color: #ef4444;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-start {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-start:hover:not(:disabled) {
+            background: #059669;
+        }
+
+        .btn-pause {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-pause:hover {
+            background: #d97706;
+        }
+
+        .btn-stop {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-stop:hover {
+            background: #4b5563;
+        }
+
+        .btn-test {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-test:hover {
+            background: #5568d3;
+        }
+
+        .btn-add {
+            background: #8b5cf6;
+            color: white;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-add:hover:not(:disabled) {
+            background: #7c3aed;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .timer-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .timer-item.active {
+            border: 2px solid #667eea;
+        }
+
+        .timer-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .timer-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .move-btn {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            background: #e5e7eb;
+            color: #333;
+        }
+
+        .move-btn:hover:not(:disabled) {
+            background: #d1d5db;
+        }
+
+        .timer-info-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timer-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .timer-duration {
+            font-size: 1.5rem;
+            font-family: 'Courier New', monospace;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .running-badge {
+            color: #667eea;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .timer-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            padding: 8px 12px;
+            background: #f3f4f6;
+            color: #333;
+        }
+
+        .icon-btn:hover:not(:disabled) {
+            background: #e5e7eb;
+        }
+
+        .icon-btn.delete {
+            color: #ef4444;
+        }
+
+        .icon-btn.delete:hover:not(:disabled) {
+            background: #fee2e2;
+        }
+
+        .edit-form {
+            padding: 16px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-save {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #059669;
+        }
+
+        .btn-cancel {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sequential Timer</h1>
+            <button class="settings-btn" onclick="toggleSettings()" title="Alarm Settings">⚙️</button>
+        </div>
+        
+        <div class="total-time" id="totalTime">Total Duration: 00:00</div>
+
+        <!-- Alarm Settings -->
+        <div class="card settings-panel" id="settingsPanel">
+            <h2 style="margin-bottom: 20px;">Alarm Settings</h2>
+            <div class="setting-item">
+                <label>Volume: <span id="volumeLabel">50%</span></label>
+                <input type="range" id="volumeSlider" min="0" max="100" value="50" oninput="updateVolume(this.value)">
+            </div>
+            <div class="setting-item">
+                <label>Duration: <span id="durationLabel">3</span> seconds</label>
+                <input type="range" id="durationSlider" min="1" max="10" step="0.5" value="3" oninput="updateDuration(this.value)">
+            </div>
+            <button class="btn-test" onclick="testAlarm()">Test Alarm</button>
+        </div>
+
+        <!-- Current Timer Display -->
+        <div class="card" id="currentTimerDisplay" style="display: none;">
+            <div class="current-timer">
+                <h2 id="currentTimerName">Study</h2>
+                <div class="timer-info" id="timerProgress">Timer 1 of 2</div>
+                <div class="time-display" id="timeDisplay">25:00</div>
+                <div class="button-group">
+                    <button class="btn-pause" id="pauseBtn" onclick="togglePause()">
+                        ⏸ Pause
+                    </button>
+                    <button class="btn-stop" onclick="stopSequence()">
+                        ⏹ Stop
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="card" id="controlPanel">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="repeatCheckbox">
+                    Repeat Entire Sequence
+                </label>
+                <button class="btn-start" onclick="startSequence()" id="startBtn">
+                    ▶ Start Sequence
+                </button>
+            </div>
+        </div>
+
+        <!-- Timer List -->
+        <div id="timerList"></div>
+
+        <!-- Add Timer Button -->
+        <button class="btn-add" onclick="addTimer()" id="addBtn">
+            ➕ Add New Timer
+        </button>
+    </div>
+
+    <script>
+        let timers = [
+            { id: 1, name: 'Study', minutes: 25, seconds: 0 },
+            { id: 2, name: 'Break', minutes: 5, seconds: 0 }
+        ];
+        let nextId = 3;
+        let currentTimerIndex = null;
+        let timeLeft = 0;
+        let isPaused = false;
+        let isRunning = false;
+        let intervalId = null;
+        let editingId = null;
+        let alarmVolume = 0.5;
+        let alarmDuration = 3;
+        let audioContext = null;
+
+        function formatTime(totalSeconds) {
+            const mins = Math.floor(totalSeconds / 60);
+            const secs = totalSeconds % 60;
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function getTotalTime() {
+            return timers.reduce((total, timer) => total + (timer.minutes * 60 + timer.seconds), 0);
+        }
+
+        function updateTotalTime() {
+            document.getElementById('totalTime').textContent = `Total Duration: ${formatTime(getTotalTime())}`;
+        }
+
+        function toggleSettings() {
+            document.getElementById('settingsPanel').classList.toggle('active');
+        }
+
+        function updateVolume(value) {
+            alarmVolume = value / 100;
+            document.getElementById('volumeLabel').textContent = `${value}%`;
+        }
+
+        function updateDuration(value) {
+            alarmDuration = parseFloat(value);
+            document.getElementById('durationLabel').textContent = value;
+        }
+
+        function playAlarm() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            const ctx = audioContext;
+            const startTime = ctx.currentTime;
+            const beepInterval = 0.5;
+            const numBeeps = Math.floor(alarmDuration / beepInterval);
+
+            for (let i = 0; i < numBeeps; i++) {
+                const time = startTime + i * beepInterval;
+                const oscillator = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(ctx.destination);
+
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(alarmVolume, time);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+
+                oscillator.start(time);
+                oscillator.stop(time + 0.3);
+            }
+        }
+
+        function testAlarm() {
+            playAlarm();
+        }
+
+        function startSequence() {
+            if (timers.length === 0) return;
+            
+            currentTimerIndex = 0;
+            timeLeft = timers[0].minutes * 60 + timers[0].seconds;
+            isRunning = true;
+            isPaused = false;
+
+            document.getElementById('currentTimerDisplay').style.display = 'block';
+            document.getElementById('controlPanel').style.display = 'none';
+            document.getElementById('addBtn').disabled = true;
+
+            updateDisplay();
+            renderTimers();
+
+            intervalId = setInterval(() => {
+                if (!isPaused) {
+                    timeLeft--;
+                    updateDisplay();
+
+                    if (timeLeft <= 0) {
+                        playAlarm();
+                        moveToNextTimer();
+                    }
+                }
+            }, 1000);
+        }
+
+        function moveToNextTimer() {
+            const nextIndex = currentTimerIndex + 1;
+            const repeatAll = document.getElementById('repeatCheckbox').checked;
+
+            if (nextIndex >= timers.length) {
+                if (repeatAll) {
+                    currentTimerIndex = 0;
+                    timeLeft = timers[0].minutes * 60 + timers[0].seconds;
+                } else {
+                    stopSequence();
+                }
+            } else {
+                currentTimerIndex = nextIndex;
+                timeLeft = timers[nextIndex].minutes * 60 + timers[nextIndex].seconds;
+            }
+
+            updateDisplay();
+            renderTimers();
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            document.getElementById('pauseBtn').innerHTML = isPaused ? '▶ Resume' : '⏸ Pause';
+        }
+
+        function stopSequence() {
+            isRunning = false;
+            isPaused = false;
+            currentTimerIndex = null;
+            timeLeft = 0;
+
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+
+            document.getElementById('currentTimerDisplay').style.display = 'none';
+            document.getElementById('controlPanel').style.display = 'block';
+            document.getElementById('addBtn').disabled = false;
+            document.getElementById('pauseBtn').innerHTML = '⏸ Pause';
+
+            renderTimers();
+        }
+
+        function updateDisplay() {
+            if (currentTimerIndex === null) return;
+
+            const timer = timers[currentTimerIndex];
+            document.getElementById('currentTimerName').textContent = timer.name;
+            document.getElementById('timerProgress').textContent = `Timer ${currentTimerIndex + 1} of ${timers.length}`;
+            
+            const timeDisplay = document.getElementById('timeDisplay');
+            timeDisplay.textContent = formatTime(timeLeft);
+            
+            if (timeLeft <= 10) {
+                timeDisplay.classList.add('warning');
+            } else {
+                timeDisplay.classList.remove('warning');
+            }
+        }
+
+        function addTimer() {
+            timers.push({
+                id: nextId++,
+                name: 'New Timer',
+                minutes: 10,
+                seconds: 0
+            });
+            updateTotalTime();
+            renderTimers();
+        }
+
+        function deleteTimer(id) {
+            if (isRunning) return;
+            timers = timers.filter(t => t.id !== id);
+            updateTotalTime();
+            renderTimers();
+        }
+
+        function moveTimer(index, direction) {
+            if (isRunning) return;
+            
+            const newIndex = direction === 'up' ? index - 1 : index + 1;
+            if (newIndex < 0 || newIndex >= timers.length) return;
+
+            [timers[index], timers[newIndex]] = [timers[newIndex], timers[index]];
+            renderTimers();
+        }
+
+        function startEdit(id) {
+            if (isRunning) return;
+            editingId = id;
+            renderTimers();
+        }
+
+        function saveEdit(id) {
+            const name = document.getElementById(`editName${id}`).value;
+            const minutes = parseInt(document.getElementById(`editMinutes${id}`).value) || 0;
+            const seconds = parseInt(document.getElementById(`editSeconds${id}`).value) || 0;
+
+            const timer = timers.find(t => t.id === id);
+            if (timer) {
+                timer.name = name;
+                timer.minutes = Math.max(0, minutes);
+                timer.seconds = Math.max(0, Math.min(59, seconds));
+            }
+
+            editingId = null;
+            updateTotalTime();
+            renderTimers();
+        }
+
+        function cancelEdit() {
+            editingId = null;
+            renderTimers();
+        }
+
+        function renderTimers() {
+            const container = document.getElementById('timerList');
+            container.innerHTML = '';
+
+            timers.forEach((timer, index) => {
+                const div = document.createElement('div');
+                div.className = 'timer-item' + (currentTimerIndex === index && isRunning ? ' active' : '');
+
+                if (editingId === timer.id) {
+                    div.innerHTML = `
+                        <div class="edit-form" style="width: 100%;">
+                            <div class="form-row">
+                                <div class="form-group" style="flex: 2;">
+                                    <label>Timer Name</label>
+                                    <input type="text" id="editName${timer.id}" value="${timer.name}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Minutes</label>
+                                    <input type="number" id="editMinutes${timer.id}" value="${timer.minutes}" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label>Seconds</label>
+                                    <input type="number" id="editSeconds${timer.id}" value="${timer.seconds}" min="0" max="59">
+                                </div>
+                            </div>
+                            <div class="button-group" style="justify-content: flex-start;">
+                                <button class="btn-save" onclick="saveEdit(${timer.id})">✓ Save</button>
+                                <button class="btn-cancel" onclick="cancelEdit()">✕ Cancel</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <div class="timer-left">
+                            <div class="timer-controls">
+                                <button class="move-btn" onclick="moveTimer(${index}, 'up')" ${index === 0 || isRunning ? 'disabled' : ''}>▲</button>
+                                <button class="move-btn" onclick="moveTimer(${index}, 'down')" ${index === timers.length - 1 || isRunning ? 'disabled' : ''}>▼</button>
+                            </div>
+                            <div class="timer-info-text">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <span class="timer-name">${timer.name}</span>
+                                    <span class="timer-duration">${formatTime(timer.minutes * 60 + timer.seconds)}</span>
+                                </div>
+                                ${currentTimerIndex === index && isRunning ? '<div class="running-badge">Currently Running</div>' : ''}
+                            </div>
+                        </div>
+                        <div class="timer-actions">
+                            <button class="icon-btn" onclick="startEdit(${timer.id})" ${isRunning ? 'disabled' : ''}>✏️</button>
+                            <button class="icon-btn delete" onclick="deleteTimer(${timer.id})" ${isRunning ? 'disabled' : ''}>🗑️</button>
+                        </div>
+                    `;
+                }
+
+                container.appendChild(div);
+            });
+
+            document.getElementById('startBtn').disabled = timers.length === 0;
+        }
+
+        // Initialize
+        updateTotalTime();
+        renderTimers();
+    </script>
+</body>
+</html>
